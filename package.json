@@ -1,0 +1,9 @@
+{
+  "name": "foodie-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Foodie ordering site with Firebase auth and Razorpay checkout",
+  "dependencies": {
+    "razorpay": "^2.9.4"
+  }
+}

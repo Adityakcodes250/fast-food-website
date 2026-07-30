@@ -1,0 +1,75 @@
+[
+    {
+        "id": 1,
+        "name": "Double Beef Burger",
+        "price": "₹99",
+        "image": "images/burger.png"  
+    },
+    {
+       "id": 2,
+        "name": "Veggie Pizza",
+        "price": "₹149",
+        "image": "images/pizza.png"   
+    },
+    {
+         "id": 3,
+        "name": "Fried Chicken",
+        "price": "₹210",
+        "image": "images/fried-chicken.png" 
+    },
+    {
+         "id": 4,
+        "name": "Chicken Roll",
+        "price": "₹79",
+        "image": "images/chicken-roll.png" 
+    },
+    {
+         "id": 5,
+        "name": "Sub Sandwich",
+        "price": "₹59",
+        "image": "images/sandwich.png" 
+    },
+    {
+        "id": 6,
+        "name": "Chicken Lasagna",
+        "price": "₹299",
+        "image": "images/lasagna.png"  
+    },
+    {
+         "id": 7,
+        "name": "Itallian Spaghetti",
+        "price": "₹399",
+        "image": "images/spaghetti.png" 
+    },
+    {
+         "id": 8,
+        "name": "Spring Roll",
+        "price": "₹89",
+        "image": "images/spring-roll.png" 
+    },
+    {
+        "id": 9,
+        "name": "Mega Cheese Burger",
+        "price": "₹149",
+        "image": "images/burger.png"
+    },
+    {
+        "id": 10,
+        "name": "BBQ Chicken Pizza",
+        "price": "₹199",
+        "image": "images/pizza.png"
+    },
+    {
+        "id": 11,
+        "name": "Spicy Chicken Wings",
+        "price": "₹179",
+        "image": "images/fried-chicken.png"
+    },
+    {
+        "id": 12,
+        "name": "Paneer Tikka Roll",
+        "price": "₹89",
+        "image": "images/chicken-roll.png"
+    }
+
+]
