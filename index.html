@@ -514,6 +514,68 @@
            </div>
 
         </footer>
+
+
+        <!-- AUTH MODAL (Sign In / Sign Up) -->
+        <div class="modal-overlay auth-overlay">
+            <div class="modal-box">
+                <a href="#" class="modal-close auth-close"><i class="fa-solid fa-xmark"></i></a>
+
+                <div class="modal-tabs flex gap-3">
+                    <a href="#" class="modal-tab active-tab" data-tab="login">Sign In</a>
+                    <a href="#" class="modal-tab" data-tab="signup">Sign Up</a>
+                    <span class="tab-indicator"></span>
+                </div>
+
+                <form class="auth-form" data-form="login">
+                    <label for="login-email">Email</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="login-email" class="login-email" placeholder="you@example.com" autocomplete="email" required>
+                    </div>
+
+                    <label for="login-password">Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="login-password" class="login-password" placeholder="••••••••" autocomplete="current-password" required>
+                    </div>
+
+                    <p class="auth-error"></p>
+
+                    <button type="submit" class="btn auth-submit mt-4">Sign In</button>
+                </form>
+
+                <form class="auth-form hidden" data-form="signup">
+                    <label for="signup-email">Email</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="signup-email" class="signup-email" placeholder="you@example.com" autocomplete="email" required>
+                    </div>
+
+                    <label for="signup-password">Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="signup-password" class="signup-password" placeholder="At least 6 characters" autocomplete="new-password" minlength="6" required>
+                    </div>
+
+                    <p class="auth-error"></p>
+
+                    <button type="submit" class="btn auth-submit mt-4">Create Account</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ORDER SUCCESS MODAL -->
+        <div class="modal-overlay success-overlay">
+            <div class="modal-box text-center">
+                <a href="#" class="modal-close success-close"><i class="fa-solid fa-xmark"></i></a>
+                <i class="fa-solid fa-circle-check" style="font-size: 3rem; color: var(--gold-finger);"></i>
+                <h3 class="mt-one-half">Order Placed!</h3>
+                <p class="para mt-half">Payment ID: <span class="order-id"></span></p>
+                <p class="para">Amount Paid: <span class="order-amount"></span></p>
+                <a href="#" class="btn success-close mt-4">Done</a>
+            </div>
+        </div>
        
         
 

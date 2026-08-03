@@ -202,258 +202,182 @@ const initApp = () => {
 initApp();
 
 
-/* ======================================================
-   AUTH (Firebase email/password)
-   ====================================================== */
+
 
 const authOverlay = document.querySelector('.auth-overlay');
-const authClose = document.querySelectorAll('.auth-close');
+const authClose = document.querySelector('.auth-close');
 const signinBtns = document.querySelectorAll('.signin-btn');
 const modalTabs = document.querySelectorAll('.modal-tab');
-const loginForm = document.querySelector('[data-form="login"]');
-const signupForm = document.querySelector('[data-form="signup"]');
+const tabIndicator = document.querySelector('.tab-indicator');
+const loginForm = document.querySelector('.auth-form[data-form="login"]');
+const signupForm = document.querySelector('.auth-form[data-form="signup"]');
 const userInfo = document.querySelector('.user-info');
-const userEmailLabel = document.querySelector('.user-email');
+const userEmailEl = document.querySelector('.user-email');
 const logoutBtn = document.querySelector('.logout-btn');
 
-const openAuthModal = () => {
-  authOverlay.classList.add('overlay-active');
-  // indicator needs layout to exist first, so position it right after the modal becomes visible
-  requestAnimationFrame(() => {
-    const activeTab = document.querySelector('.modal-tab.active-tab');
-    if (activeTab) moveTabIndicator(activeTab);
+const clearAuthErrors = () => {
+  document.querySelectorAll('.auth-error').forEach((el) => { el.textContent = ''; });
+};
+
+const moveTabIndicator = (tabEl) => {
+  if (!tabIndicator || !tabEl) return;
+  tabIndicator.style.width = `${tabEl.offsetWidth}px`;
+  tabIndicator.style.transform = `translateX(${tabEl.offsetLeft}px)`;
+};
+
+const switchAuthTab = (tabName) => {
+  modalTabs.forEach((tab) => {
+    tab.classList.toggle('active-tab', tab.dataset.tab === tabName);
   });
+
+  loginForm.classList.toggle('hidden', tabName !== 'login');
+  signupForm.classList.toggle('hidden', tabName !== 'signup');
+
+  clearAuthErrors();
+
+  const activeTab = [...modalTabs].find((tab) => tab.dataset.tab === tabName);
+  moveTabIndicator(activeTab);
 };
-const closeAuthModal = () => authOverlay.classList.remove('overlay-active');
 
-const tabIndicator = document.querySelector('.tab-indicator');
-const moveTabIndicator = (tab) => {
-  if (!tabIndicator) return;
-  tabIndicator.style.width = `${tab.offsetWidth}px`;
-  tabIndicator.style.transform = `translateX(${tab.offsetLeft}px)`;
+const openAuthModal = (tabName = 'login') => {
+  if (!authOverlay) return;
+  authOverlay.classList.add('overlay-active');
+  switchAuthTab(tabName);
 };
 
-signinBtns.forEach((btn) => btn.addEventListener('click', (e) => {
-  e.preventDefault();
-  openAuthModal();
-}));
+const closeAuthModal = () => {
+  if (!authOverlay) return;
+  authOverlay.classList.remove('overlay-active');
+  clearAuthErrors();
+  loginForm.reset();
+  signupForm.reset();
+};
 
-authClose.forEach((btn) => btn.addEventListener('click', (e) => {
+signinBtns.forEach((btn) => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    openAuthModal('login');
+  });
+});
+
+authClose?.addEventListener('click', (e) => {
   e.preventDefault();
   closeAuthModal();
-}));
+});
+
+authOverlay?.addEventListener('click', (e) => {
+  if (e.target === authOverlay) closeAuthModal();
+});
 
 modalTabs.forEach((tab) => {
   tab.addEventListener('click', (e) => {
     e.preventDefault();
-    modalTabs.forEach((t) => t.classList.remove('active-tab'));
-    tab.classList.add('active-tab');
-    moveTabIndicator(tab);
-
-    if (tab.dataset.tab === 'login') {
-      loginForm.classList.remove('hidden');
-      signupForm.classList.add('hidden');
-    } else {
-      signupForm.classList.remove('hidden');
-      loginForm.classList.add('hidden');
-    }
+    switchAuthTab(tab.dataset.tab);
   });
 });
 
-// Firebase throws error codes like "auth/wrong-password" — translate the
-// common ones into plain, user-facing messages instead of showing that raw.
-const getFriendlyAuthError = (err) => {
-  const code = err && err.code ? err.code : '';
+// Keep the sliding indicator aligned if the window resizes while the modal is open
+window.addEventListener('resize', () => {
+  const activeTab = [...modalTabs].find((tab) => tab.classList.contains('active-tab'));
+  if (authOverlay?.classList.contains('overlay-active')) moveTabIndicator(activeTab);
+});
 
-  const messages = {
-    'auth/invalid-email': "That email address doesn't look right. Please check it and try again.",
-    'auth/user-disabled': 'This account has been disabled. Contact support if that seems wrong.',
-    'auth/user-not-found': "We couldn't find an account with that email. Try signing up instead.",
-    'auth/wrong-password': 'Incorrect password. Please try again.',
-    'auth/invalid-credential': 'Incorrect email or password. Please try again.',
-    'auth/email-already-in-use': 'An account already exists with that email. Try logging in instead.',
-    'auth/weak-password': 'Please choose a stronger password — at least 6 characters.',
-    'auth/missing-password': 'Please enter a password.',
-    'auth/too-many-requests': "Too many attempts. Please wait a moment before trying again.",
-    'auth/network-request-failed': 'Network error — please check your connection and try again.',
-    'auth/operation-not-allowed': "Email/password sign-in isn't enabled yet. Please contact the site owner.",
-    'auth/invalid-api-key': 'The site is not fully set up yet — please contact the site owner.',
-    'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'The site is not fully set up yet — please contact the site owner.',
-    'auth/app-not-authorized': 'The site is not fully set up yet — please contact the site owner.',
-    'auth/configuration-not-found': 'The site is not fully set up yet — please contact the site owner.',
-    'auth/internal-error': 'The site is not fully set up yet — please contact the site owner.',
-  };
-
-  return messages[code] || 'Something went wrong. Please try again.';
+const showAuthError = (form, message) => {
+  const errorEl = form.querySelector('.auth-error');
+  if (errorEl) errorEl.textContent = message;
 };
 
-// Log in
-loginForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const errorEl = loginForm.querySelector('.auth-error');
-  errorEl.textContent = '';
-
-  if (window.firebaseIsConfigured === false) {
-    errorEl.textContent = 'Sign in is not set up yet — please contact the site owner.';
-    return;
+const friendlyAuthError = (error) => {
+  switch (error.code) {
+    case 'auth/invalid-email':
+      return 'That email address looks invalid.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Incorrect email or password.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists.';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters.';
+    default:
+      return error.message || 'Something went wrong. Please try again.';
   }
+};
 
-  const email = loginForm.querySelector('.login-email').value;
-  const password = loginForm.querySelector('.login-password').value;
-  const submitBtn = loginForm.querySelector('button, [type="submit"]');
-  if (submitBtn) submitBtn.disabled = true;
+if (loginForm) {
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearAuthErrors();
 
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .then(() => {
-      loginForm.reset();
-      closeAuthModal();
-    })
-    .catch((err) => {
-      errorEl.textContent = getFriendlyAuthError(err);
-    })
-    .finally(() => {
-      if (submitBtn) submitBtn.disabled = false;
-    });
-});
+    if (!window.firebaseIsConfigured) {
+      showAuthError(loginForm, "Firebase isn't configured yet — add your project keys in firebase-config.js.");
+      return;
+    }
 
-// Sign up
-signupForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const errorEl = signupForm.querySelector('.auth-error');
-  errorEl.textContent = '';
+    const email = loginForm.querySelector('.login-email').value.trim();
+    const password = loginForm.querySelector('.login-password').value;
+    const submitBtn = loginForm.querySelector('.auth-submit');
 
-  if (window.firebaseIsConfigured === false) {
-    errorEl.textContent = 'Sign up is not set up yet — please contact the site owner.';
-    return;
-  }
+    submitBtn.disabled = true;
+    firebase.auth().signInWithEmailAndPassword(email, password)
+      .then(() => {
+        closeAuthModal();
+      })
+      .catch((error) => {
+        showAuthError(loginForm, friendlyAuthError(error));
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+      });
+  });
+}
 
-  const email = signupForm.querySelector('.signup-email').value;
-  const password = signupForm.querySelector('.signup-password').value;
-  const submitBtn = signupForm.querySelector('button, [type="submit"]');
-  if (submitBtn) submitBtn.disabled = true;
+if (signupForm) {
+  signupForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearAuthErrors();
 
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      signupForm.reset();
-      closeAuthModal();
-    })
-    .catch((err) => {
-      errorEl.textContent = getFriendlyAuthError(err);
-    })
-    .finally(() => {
-      if (submitBtn) submitBtn.disabled = false;
-    });
-});
+    if (!window.firebaseIsConfigured) {
+      showAuthError(signupForm, "Firebase isn't configured yet — add your project keys in firebase-config.js.");
+      return;
+    }
 
-// Log out
-logoutBtn.addEventListener('click', (e) => {
+    const email = signupForm.querySelector('.signup-email').value.trim();
+    const password = signupForm.querySelector('.signup-password').value;
+    const submitBtn = signupForm.querySelector('.auth-submit');
+
+    submitBtn.disabled = true;
+    firebase.auth().createUserWithEmailAndPassword(email, password)
+      .then(() => {
+        closeAuthModal();
+      })
+      .catch((error) => {
+        showAuthError(signupForm, friendlyAuthError(error));
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+      });
+  });
+}
+
+logoutBtn?.addEventListener('click', (e) => {
   e.preventDefault();
   firebase.auth().signOut();
 });
 
-// Reflect logged-in/out state in the navbar
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    signinBtns.forEach((btn) => btn.classList.add('hidden'));
-    userInfo.classList.add('user-info-active');
-    userEmailLabel.textContent = user.email;
-  } else {
-    signinBtns.forEach((btn) => btn.classList.remove('hidden'));
-    userInfo.classList.remove('user-info-active');
-    userEmailLabel.textContent = '';
-  }
-});
 
-
-/* ======================================================
-   CHECKOUT (Razorpay)
-   ====================================================== */
-
-const checkoutBtn = document.getElementById('checkout-btn');
-const successOverlay = document.querySelector('.success-overlay');
-const successClose = document.querySelectorAll('.success-close');
-const orderIdLabel = document.querySelector('.order-id');
-const orderAmountLabel = document.querySelector('.order-amount');
-
-successClose.forEach((btn) => btn.addEventListener('click', (e) => {
-  e.preventDefault();
-  successOverlay.classList.remove('overlay-active');
-}));
-
-checkoutBtn.addEventListener('click', async (e) => {
-  e.preventDefault();
-
-  // Must be logged in to pay
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    openAuthModal();
-    return;
-  }
-
-  const totalText = cartTotal.textContent.replace('₹', '').trim();
-  const amount = parseFloat(totalText);
-
-  if (!amount || amount <= 0) {
-    alert('Your cart is empty.');
-    return;
-  }
-
-  try {
-    // Ask our Netlify function to create a Razorpay order (keeps the
-    // secret key on the server, never in the browser)
-    const orderRes = await fetch('/.netlify/functions/create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount }),
-    });
-    const orderData = await orderRes.json();
-
-    if (!orderRes.ok) {
-      throw new Error(orderData.error || 'Could not start checkout');
+if (window.firebaseIsConfigured && typeof firebase !== 'undefined' && firebase.auth) {
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      signinBtns.forEach((btn) => btn.classList.add('hidden'));
+      userInfo?.classList.add('user-info-active');
+      if (userEmailEl) userEmailEl.textContent = user.email;
+    } else {
+      signinBtns.forEach((btn) => btn.classList.remove('hidden'));
+      userInfo?.classList.remove('user-info-active');
+      if (userEmailEl) userEmailEl.textContent = '';
     }
-
-    const options = {
-      key: orderData.key,
-      amount: orderData.amount,
-      currency: 'INR',
-      name: 'Foodie',
-      description: 'Food order',
-      order_id: orderData.orderId,
-      prefill: { email: user.email },
-      theme: { color: '#f2bd12' },
-      handler: async (response) => {
-        // Verify the payment signature server-side before treating it as success
-        const verifyRes = await fetch('/.netlify/functions/verify-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(response),
-        });
-        const verifyData = await verifyRes.json();
-
-        if (verifyData.verified) {
-          orderIdLabel.textContent = response.razorpay_payment_id;
-          orderAmountLabel.textContent = `₹${amount.toFixed(2)}`;
-          successOverlay.classList.add('overlay-active');
-          cartTab.classList.remove('cart-tab-active');
-
-          // Clear the cart
-          cartList.innerHTML = '';
-          cartProduct = [];
-          updateTotals();
-        } else {
-          alert('Payment could not be verified. Please contact support.');
-        }
-      },
-      modal: {
-        ondismiss: () => {
-          // user closed the Razorpay widget without paying — no action needed
-        },
-      },
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.open();
-  } catch (err) {
-    alert(err.message);
-  }
-});
+  });
+} else {
+  console.warn('Firebase is not configured — update firebaseConfig in firebase-config.js to enable sign in.');
+}
