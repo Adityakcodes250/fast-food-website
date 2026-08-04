@@ -106,6 +106,13 @@ img{
 /* HEADER STYLING */
 
 
+header{
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--hint-yellow);
+}
+
 .navbar{
     min-height: 14vh;
     position: relative;
@@ -415,7 +422,7 @@ h4{
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 99;
+    z-index: 300;
     box-shadow: rgba(0, 0, 0, 0.148) -10px -10px 20px;
     transition: .3s ease-in-out; 
 } 
@@ -939,7 +946,7 @@ width: 0;
     .mobile-menu{
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items:center;
         gap: 2rem;
         position: fixed;
@@ -948,7 +955,7 @@ width: 0;
         height: 100vh;
         width: 18rem;
         max-width: 80vw;
-        padding: 2rem;
+        padding: 8rem 2rem 2rem 2rem;
         margin: 0;
         background-color: var(--pure-white);
         border-left : 0.5rem solid var(--gold-finger);
@@ -1330,3 +1337,4 @@ width: 0;
         flex-basis: 100%;
     }
 }
+
