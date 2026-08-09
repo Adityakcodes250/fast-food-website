@@ -1,6 +1,3 @@
-// Built from its character code (8377) instead of typed directly, so the
-// symbol still renders correctly even if the server doesn't send a
-// UTF-8 charset header for this file.
 const RUPEE = String.fromCharCode(8377);
 
 var swiper = new Swiper(".mySwiper", {
@@ -327,7 +324,7 @@ if (loginForm) {
     clearAuthErrors();
 
     if (!window.firebaseIsConfigured) {
-      showAuthError(loginForm, "Firebase isn't configured yet â€” add your project keys in firebase-config.js.");
+      showAuthError(loginForm, "Firebase isn't configured yet — add your project keys in firebase-config.js.");
       return;
     }
 
@@ -355,7 +352,7 @@ if (signupForm) {
     clearAuthErrors();
 
     if (!window.firebaseIsConfigured) {
-      showAuthError(signupForm, "Firebase isn't configured yet â€” add your project keys in firebase-config.js.");
+      showAuthError(signupForm, "Firebase isn't configured yet — add your project keys in firebase-config.js.");
       return;
     }
 
@@ -383,13 +380,42 @@ logoutBtn?.addEventListener('click', (e) => {
 });
 
 
+const successOverlay = document.querySelector('.success-overlay');
+const successCloseEls = document.querySelectorAll('.success-close');
+const orderIdEl = document.querySelector('.order-id');
+const orderAmountEl = document.querySelector('.order-amount');
+
+const showOrderSuccess = (paymentId, amountRupees) => {
+  if (orderIdEl) orderIdEl.textContent = paymentId;
+  if (orderAmountEl) orderAmountEl.textContent = `${RUPEE}${amountRupees.toFixed(2)}`;
+  successOverlay?.classList.add('overlay-active');
+  cartTab.classList.remove('cart-tab-active'); // close the cart panel behind it
+};
+
+successCloseEls.forEach((el) => {
+  el.addEventListener('click', (e) => {
+    e.preventDefault();
+    successOverlay?.classList.remove('overlay-active');
+  });
+});
+
+successOverlay?.addEventListener('click', (e) => {
+  if (e.target === successOverlay) successOverlay.classList.remove('overlay-active');
+});
+
+const clearCart = () => {
+  cartProduct = [];
+  cartList.innerHTML = '';
+  updateTotals();
+};
+
 const checkoutBtn = document.querySelector('#checkout-btn');
+const orderNowBtn = document.querySelector('#order-now-btn');
 
-checkoutBtn?.addEventListener('click', (e) => {
-  e.preventDefault();
-
+const openRazorpayCheckout = () => {
   if (cartProduct.length === 0) {
-    alert('Your cart is empty.');
+    alert('Your cart is empty. Add something from the menu first!');
+    cartTab.classList.add('cart-tab-active');
     return;
   }
 
@@ -406,8 +432,8 @@ checkoutBtn?.addEventListener('click', (e) => {
       email: currentUser ? currentUser.email : "",
     },
     handler: function (response) {
-      alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
-      // TODO: clear cart / show order confirmation here
+      showOrderSuccess(response.razorpay_payment_id, totalRupees);
+      clearCart();
     },
     modal: {
       ondismiss: function () {
@@ -418,6 +444,18 @@ checkoutBtn?.addEventListener('click', (e) => {
 
   const rzp = new Razorpay(options);
   rzp.open();
+};
+
+checkoutBtn?.addEventListener('click', (e) => {
+  e.preventDefault();
+  openRazorpayCheckout();
+});
+
+// Hero "Order Now" button — jumps straight to Razorpay using whatever's
+// already in the cart (opens the cart panel instead if it's empty).
+orderNowBtn?.addEventListener('click', (e) => {
+  e.preventDefault();
+  openRazorpayCheckout();
 });
 
 
@@ -434,6 +472,7 @@ if (window.firebaseIsConfigured && typeof firebase !== 'undefined' && firebase.a
     }
   });
 } else {
-  console.warn('Firebase is not configured â€” update firebaseConfig in firebase-config.js to enable sign in.');
+  console.warn('Firebase is not configured — update firebaseConfig in firebase-config.js to enable sign in.');
 }
+
 
