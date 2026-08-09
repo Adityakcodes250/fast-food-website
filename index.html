@@ -590,5 +590,61 @@
        <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
  </body>
  </html>
- 
-  
+
+
+
+
+
+ <script>
+var options = {
+  "key": "rzp_live_TNEVzZaud363yp",
+  "amount": 2480000, // ₹24800 in paise
+  "currency": "INR",
+  "description": "food-order-website",
+  "image": "example.com/image/rzp.jpg",
+  "prefill": {
+    "email": "itsmeaditya11335@gmail.com",
+    "contact": "9304938848"
+  },
+  config: {
+    display: {
+      blocks: {
+        utib: {
+          name: "Pay Using Axis Bank",
+          instruments: [
+            { method: "card", issuers: ["UTIB"] },
+            { method: "netbanking", banks: ["UTIB"] }
+          ]
+        },
+        other: {
+          name: "Other Payment Methods",
+          instruments: [
+            { method: "card", issuers: ["ICIC"] },
+            { method: "netbanking" }
+          ]
+        }
+      },
+      hide: [{ method: "upi" }],
+      sequence: ["block.utib", "block.other"],
+      preferences: { show_default_blocks: false }
+    }
+  },
+  "handler": function (response) {
+    alert(response.razorpay_payment_id);
+  },
+  "modal": {
+    "ondismiss": function () {
+      if (confirm("Are you sure, you want to close the form?")) {
+        console.log("Checkout form closed by the user");
+      } else {
+        console.log("Complete the Payment");
+      }
+    }
+  }
+};
+var rzp1 = new Razorpay(options);
+document.getElementById('rzp-button1').onclick = function (e) {
+  rzp1.open();
+  e.preventDefault();
+};
+</script>

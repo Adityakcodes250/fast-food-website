@@ -1,4 +1,7 @@
-
+// Built from its character code (8377) instead of typed directly, so the
+// symbol still renders correctly even if the server doesn't send a
+// UTF-8 charset header for this file.
+const RUPEE = String.fromCharCode(8377);
 
 var swiper = new Swiper(".mySwiper", {
   loop: true,
@@ -86,13 +89,13 @@ const updateTotals = () =>{
   document.querySelectorAll('.item').forEach(item=>{
 
     const quantity = parseInt(item.querySelector('.quantity-value').textContent);
-    const price = parseFloat(item.querySelector('.item-total').textContent.replace('₹',''));
+    const price = parseFloat(item.querySelector('.item-total').textContent.replace(/[^0-9.]/g, ''));
     
     totalPrice += price;
     totalQuantity += quantity;
    });
 
-    cartTotal.textContent = `₹${totalPrice.toFixed(2)}`;
+    cartTotal.textContent = `${RUPEE}${totalPrice.toFixed(2)}`;
     cartValue.textContent = totalQuantity;
 }
 
@@ -134,7 +137,7 @@ const addToCart = (product) => {
   cartProduct.push(product);
 
   let quantity = 1;
-  let price = parseFloat(product.price.replace('₹',''))
+  let price = parseFloat(product.price.replace(/[^0-9.]/g, ''))
      
 
   const cartItem = document.createElement("div");
@@ -175,7 +178,7 @@ const addToCart = (product) => {
     e.preventDefault();
     quantity++;
     quantityValue.textContent = quantity;
-    itemTotal.textContent = `₹${(price * quantity).toFixed(2)}`
+    itemTotal.textContent = `${RUPEE}${(price * quantity).toFixed(2)}`
     updateTotals();
   });
 
@@ -186,7 +189,7 @@ const addToCart = (product) => {
         
         quantity--;
       quantityValue.textContent = quantity;
-      itemTotal.textContent = `₹${(price * quantity).toFixed(2)}`;
+      itemTotal.textContent = `${RUPEE}${(price * quantity).toFixed(2)}`;
       updateTotals();
       }
 
@@ -324,7 +327,7 @@ if (loginForm) {
     clearAuthErrors();
 
     if (!window.firebaseIsConfigured) {
-      showAuthError(loginForm, "Firebase isn't configured yet — add your project keys in firebase-config.js.");
+      showAuthError(loginForm, "Firebase isn't configured yet â€” add your project keys in firebase-config.js.");
       return;
     }
 
@@ -352,7 +355,7 @@ if (signupForm) {
     clearAuthErrors();
 
     if (!window.firebaseIsConfigured) {
-      showAuthError(signupForm, "Firebase isn't configured yet — add your project keys in firebase-config.js.");
+      showAuthError(signupForm, "Firebase isn't configured yet â€” add your project keys in firebase-config.js.");
       return;
     }
 
@@ -380,6 +383,44 @@ logoutBtn?.addEventListener('click', (e) => {
 });
 
 
+const checkoutBtn = document.querySelector('#checkout-btn');
+
+checkoutBtn?.addEventListener('click', (e) => {
+  e.preventDefault();
+
+  if (cartProduct.length === 0) {
+    alert('Your cart is empty.');
+    return;
+  }
+
+  const totalRupees = parseFloat(cartTotal.textContent.replace(/[^0-9.]/g, ''));
+  const currentUser = window.firebaseIsConfigured && firebase.auth().currentUser;
+
+  const options = {
+    key: "rzp_live_TNEVzZaud363yp",
+    amount: Math.round(totalRupees * 100), // Razorpay wants paise
+    currency: "INR",
+    name: "Foodie",
+    description: "Food order payment",
+    prefill: {
+      email: currentUser ? currentUser.email : "",
+    },
+    handler: function (response) {
+      alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+      // TODO: clear cart / show order confirmation here
+    },
+    modal: {
+      ondismiss: function () {
+        console.log('Checkout closed by user');
+      }
+    }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.open();
+});
+
+
 if (window.firebaseIsConfigured && typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged((user) => {
     if (user) {
@@ -393,7 +434,6 @@ if (window.firebaseIsConfigured && typeof firebase !== 'undefined' && firebase.a
     }
   });
 } else {
-  console.warn('Firebase is not configured — update firebaseConfig in firebase-config.js to enable sign in.');
+  console.warn('Firebase is not configured â€” update firebaseConfig in firebase-config.js to enable sign in.');
 }
-
 
