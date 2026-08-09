@@ -380,16 +380,72 @@ logoutBtn?.addEventListener('click', (e) => {
 });
 
 
+const ORDER_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+const yourOrderLinks = document.querySelectorAll('#your-order-link, #your-order-link-mobile');
+
+const saveLastOrder = (paymentId, amountRupees) => {
+  const order = { paymentId, amount: amountRupees, timestamp: Date.now() };
+  try {
+    localStorage.setItem('lastOrder', JSON.stringify(order));
+  } catch (err) {
+    console.warn('Could not save order locally:', err);
+  }
+  refreshYourOrderLink();
+};
+
+const getValidLastOrder = () => {
+  let stored;
+  try {
+    stored = JSON.parse(localStorage.getItem('lastOrder'));
+  } catch (err) {
+    stored = null;
+  }
+  if (!stored) return null;
+
+  const expired = Date.now() - stored.timestamp > ORDER_TTL_MS;
+  if (expired) {
+    localStorage.removeItem('lastOrder');
+    return null;
+  }
+  return stored;
+};
+
+const refreshYourOrderLink = () => {
+  const order = getValidLastOrder();
+  yourOrderLinks.forEach((link) => {
+    link.classList.toggle('hidden', !order);
+  });
+};
+
+yourOrderLinks.forEach((link) => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const order = getValidLastOrder();
+    if (!order) {
+      alert('No active order — order details expire 2 hours after checkout.');
+      refreshYourOrderLink();
+      return;
+    }
+    showOrderSuccess(order.paymentId, order.amount, false);
+  });
+});
+
+// Check on load, and periodically after, in case the 2-hour window
+// lapses while the tab stays open.
+refreshYourOrderLink();
+setInterval(refreshYourOrderLink, 60 * 1000);
+
 const successOverlay = document.querySelector('.success-overlay');
 const successCloseEls = document.querySelectorAll('.success-close');
 const orderIdEl = document.querySelector('.order-id');
 const orderAmountEl = document.querySelector('.order-amount');
 
-const showOrderSuccess = (paymentId, amountRupees) => {
+const showOrderSuccess = (paymentId, amountRupees, isNewOrder = true) => {
   if (orderIdEl) orderIdEl.textContent = paymentId;
   if (orderAmountEl) orderAmountEl.textContent = `${RUPEE}${amountRupees.toFixed(2)}`;
   successOverlay?.classList.add('overlay-active');
   cartTab.classList.remove('cart-tab-active'); // close the cart panel behind it
+  if (isNewOrder) saveLastOrder(paymentId, amountRupees);
 };
 
 successCloseEls.forEach((el) => {
@@ -474,5 +530,8 @@ if (window.firebaseIsConfigured && typeof firebase !== 'undefined' && firebase.a
 } else {
   console.warn('Firebase is not configured — update firebaseConfig in firebase-config.js to enable sign in.');
 }
+
+
+
 
 
