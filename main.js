@@ -383,8 +383,8 @@ logoutBtn?.addEventListener('click', (e) => {
 const ORDER_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const yourOrderLinks = document.querySelectorAll('#your-order-link, #your-order-link-mobile');
 
-const saveLastOrder = (paymentId, amountRupees) => {
-  const order = { paymentId, amount: amountRupees, timestamp: Date.now() };
+const saveLastOrder = (paymentId, amountRupees, items) => {
+  const order = { paymentId, amount: amountRupees, items, timestamp: Date.now() };
   try {
     localStorage.setItem('lastOrder', JSON.stringify(order));
   } catch (err) {
@@ -426,7 +426,7 @@ yourOrderLinks.forEach((link) => {
       refreshYourOrderLink();
       return;
     }
-    showOrderSuccess(order.paymentId, order.amount, false);
+    showOrderSuccess(order.paymentId, order.amount, false, order.items || []);
   });
 });
 
@@ -440,12 +440,28 @@ const successCloseEls = document.querySelectorAll('.success-close');
 const orderIdEl = document.querySelector('.order-id');
 const orderAmountEl = document.querySelector('.order-amount');
 
-const showOrderSuccess = (paymentId, amountRupees, isNewOrder = true) => {
+const orderItemsEl = document.querySelector('.order-items');
+
+const showOrderSuccess = (paymentId, amountRupees, isNewOrder = true, items = []) => {
   if (orderIdEl) orderIdEl.textContent = paymentId;
   if (orderAmountEl) orderAmountEl.textContent = `${RUPEE}${amountRupees.toFixed(2)}`;
+
+  if (orderItemsEl) {
+    orderItemsEl.innerHTML = items.map((item) => `
+      <div class="order-item-row">
+        <img src="${item.image}" alt="${item.name}">
+        <div class="order-item-detail">
+          <h5>${item.name}</h5>
+          <span>Qty: ${item.quantity}</span>
+        </div>
+        <div class="order-item-price">${item.lineTotal}</div>
+      </div>
+    `).join('');
+  }
+
   successOverlay?.classList.add('overlay-active');
   cartTab.classList.remove('cart-tab-active'); // close the cart panel behind it
-  if (isNewOrder) saveLastOrder(paymentId, amountRupees);
+  if (isNewOrder) saveLastOrder(paymentId, amountRupees, items);
 };
 
 successCloseEls.forEach((el) => {
@@ -465,6 +481,15 @@ const clearCart = () => {
   updateTotals();
 };
 
+const getCartSnapshot = () => {
+  return Array.from(document.querySelectorAll('.cart-list .item')).map((el) => ({
+    image: el.querySelector('.item-image img')?.getAttribute('src') || '',
+    name: el.querySelector('.detail h4')?.textContent || '',
+    quantity: el.querySelector('.quantity-value')?.textContent || '1',
+    lineTotal: el.querySelector('.item-total')?.textContent || '',
+  }));
+};
+
 const checkoutBtn = document.querySelector('#checkout-btn');
 const orderNowBtn = document.querySelector('#order-now-btn');
 
@@ -477,6 +502,7 @@ const openRazorpayCheckout = () => {
 
   const totalRupees = parseFloat(cartTotal.textContent.replace(/[^0-9.]/g, ''));
   const currentUser = window.firebaseIsConfigured && firebase.auth().currentUser;
+  const itemsSnapshot = getCartSnapshot();
 
   const options = {
     key: "rzp_live_TNEVzZaud363yp",
@@ -488,7 +514,7 @@ const openRazorpayCheckout = () => {
       email: currentUser ? currentUser.email : "",
     },
     handler: function (response) {
-      showOrderSuccess(response.razorpay_payment_id, totalRupees);
+      showOrderSuccess(response.razorpay_payment_id, totalRupees, true, itemsSnapshot);
       clearCart();
     },
     modal: {
@@ -530,6 +556,9 @@ if (window.firebaseIsConfigured && typeof firebase !== 'undefined' && firebase.a
 } else {
   console.warn('Firebase is not configured — update firebaseConfig in firebase-config.js to enable sign in.');
 }
+
+
+
 
 
 
